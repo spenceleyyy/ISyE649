@@ -1,0 +1,72 @@
+#NOTE; THIS PLOT USES FICTITIOUS DATA
+
+#library(readr)
+#library(ggplot2)
+#library(ggiraph)
+
+# --- Load the smooth dataset ---
+df <- read_csv("P1N1_Face_vs_NoFace_SMOOTH.csv", show_col_types = FALSE)
+
+# --- Create APA-style plot with non-interactive lines and interactive points ---
+p1n1_points_annotated <- ggplot(
+  df,
+  aes(x = time_ms,
+      y = amplitude_uV,
+      color = condition,
+      group = condition)
+) +
+  # Static smooth lines
+  geom_line(size = 3.3) +
+  
+  # Interactive points (hoverable amplitude)
+  geom_point_interactive(
+    aes(
+      tooltip = paste0(
+        "Condition: ", condition, "\n",
+        "Time (ms): ", time_ms, "\n",
+        "Amplitude (µV): ", sprintf("%.2f", amplitude_uV)
+      ),
+      data_id = paste(condition, time_ms)
+    ),
+    size = 2.5
+  ) +
+  
+  # P1/N1 reference lines
+  geom_vline(xintercept = c(95, 170), linetype = "dashed", color = "gray50") +
+  annotate("text", x = 80, y = 3.7, label = "P1", vjust = -0.5, color = "gray30") +
+  annotate("text", x = 155, y = 4, label = "N1", vjust = 1.5, color = "gray30") +
+  
+  # Labels and theme
+  labs(
+    title = "P1/N1 ERP Complex: Seeing a Face vs. Not Seeing a Face",
+    x = "Time (ms)",
+    y = expression("Amplitude (" * mu * "V)")
+  ) +
+  scale_color_manual(values = c("#0072B2", "#D55E00")) +
+  theme_classic(base_size = 14) +
+  theme(
+    plot.title   = element_text(hjust = 0.5, face = "bold"),
+    legend.title = element_blank(),
+    axis.line    = element_line(color = "black"),
+    axis.ticks   = element_line(color = "black"),
+    axis.text    = element_text(color = "black"),
+    panel.grid   = element_blank()
+  )
+
+# --- Render interactive version ---
+p1n1 <- girafe(
+  ggobj = p1n1_points_annotated,
+  width_svg = 12,      # Increased from 8
+  height_svg = 8,      # Increased from 5.5
+  options = list(
+    opts_hover(css = "fill:#FF5733;r:5pt;"),
+    opts_sizing(rescale = TRUE, width = 1)  # Added width = 1
+  )
+)
+saveWidget(
+  p1n1,
+  file = "p1n1_points_annotated.html",
+  selfcontained = TRUE
+)
+
+```
