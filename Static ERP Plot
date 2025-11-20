@@ -23,6 +23,10 @@ create_channel_plot <- function(channel_name) {
   df_channel <- df_filtered %>%
     filter(Channel == channel_name)
   
+  # Calculate symmetric y-axis limits centered on 0
+  y_max <- max(abs(df_channel$GrandVoltage), na.rm = TRUE)
+  y_limits <- c(-y_max, y_max)
+  
   p <- ggplot(
     df_channel,
     aes(x = Time_ms,
@@ -30,6 +34,16 @@ create_channel_plot <- function(channel_name) {
         color = Condition,
         group = Condition)
   ) +
+    # Add horizontal line at y=0 with lower opacity
+    geom_hline(yintercept = 0, linetype = "solid", color = "gray50", linewidth = 0.5, alpha = 0.5) +
+    
+    # Add vertical line at x=0 for the event
+    geom_vline(xintercept = 0, linetype = "solid", color = "black", linewidth = 1) +
+    
+    # Add label for the event line
+    annotate("text", x = 0, y = Inf, label = "Event", 
+             vjust = -0.5, hjust = 0.5, size = 4, fontface = "bold", color = "black") +
+    
     # Interactive lines with tooltips
     geom_line_interactive(
       aes(
@@ -37,7 +51,7 @@ create_channel_plot <- function(channel_name) {
           "Channel: ", channel_name, "\n",
           "Condition: ", Condition, "\n",
           "Time (ms): ", Time_ms, "\n",
-          "Amplitude (µV): ", sprintf("%.2f", GrandVoltage)
+          "Voltage: ", sprintf("%.2f", GrandVoltage)
         ),
         data_id = paste(Condition, Time_ms)
       ),
@@ -59,15 +73,15 @@ create_channel_plot <- function(channel_name) {
       alpha = 0.7
     ) +
 
-    
     # Labels and theme
     labs(
       title = paste("ERP Waveform - Channel:", channel_name),
       subtitle = "Hover over points to see values | Drag to zoom | Double-click to reset",
       x = "Time relative to event (ms)",
-      y = expression("Voltage")
+      y = expression("Voltage (µV)")
     ) +
     scale_x_continuous(breaks = seq(-200, 800, 100)) +
+    scale_y_continuous(limits = y_limits) +
     scale_color_manual(
       values = c("Motion" = "#0072B2", "Nonmotion" = "#D55E00"),
       labels = c("Motion", "Nonmotion")
@@ -81,7 +95,7 @@ create_channel_plot <- function(channel_name) {
       axis.line     = element_line(color = "black"),
       axis.ticks    = element_line(color = "black"),
       axis.text     = element_text(color = "black"),
-      panel.grid.major = element_line(color = "gray90", linewidth = 0.3),
+      panel.grid.major = element_blank(),
       panel.grid.minor = element_blank()
     )
   
